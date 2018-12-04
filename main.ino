@@ -13,5 +13,5 @@ void setup() {
 void loop() {
   Serial.println("I am alive!");
   delay(1000);
- # break it
+ /* break it */
 }
