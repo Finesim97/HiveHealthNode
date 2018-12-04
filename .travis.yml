@@ -12,7 +12,7 @@ install:
   - arduino --install-boards esp32:esp32 --save-prefs
   # - arduino --install-library "DHT sensor library"
 script:
-  - arduino --verify --board esp32:esp32:nodemcu-32s $PWD/main.ino
+  - arduino --verify --board esp32:esp32:nodemcu-32s:FlashFreq=40 $PWD/main.ino 
 notifications:
   email:
     on_success: change
