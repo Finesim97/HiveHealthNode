@@ -7,6 +7,7 @@ https://github.com/espressif/arduino-esp32/blob/master/docs/arduino-ide/boards_m
 #include <WiFi.h>
 #include <EEPROM.h>
 #include <MQTT.h>
+#include "./StatusLED.h"
 /*
 No idea how the partitioning works
 Random sizes:
