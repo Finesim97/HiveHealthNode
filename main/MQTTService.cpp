@@ -1,6 +1,8 @@
 #include "MQTTService.h" 
 
-MQTTService::MQTTService(Preferences &_pref, Client &_wifi):pref(_pref){
+MQTTService::MQTTService(Preferences &_pref, Client &_wifi, SensorReading* _sensors, int _noofsensors):pref(_pref){
+  sensors=_sensors;
+  noofsensors=_noofsensors;
   pref.getString(MQTT_HOSTNAME,hostnamebuffer, MQTT_HOSTNAME_MAXLENGTH+1);
   mqtt = PubSubClient((const char*)hostnamebuffer, pref.getUShort(MQTT_PORT,MQTT_PORT_DEF), _wifi);
 }
@@ -40,7 +42,7 @@ char* constructPrefName(char* prefnamebuffer, SensorReading* sr, const char* suf
   return prefnamebuffer;
 }
 
-boolean MQTTService::publishSensorReading(SensorReading* sr){
+boolean MQTTService::publishSensorReading(SensorReading* sr){;
   topicbuffer[0]=(char)0;
   measurementbuffer[0]=(char)0;
   const char *topic=topicbuffer;
@@ -52,12 +54,51 @@ boolean MQTTService::publishSensorReading(SensorReading* sr){
   boolean retain = pref.getBool(constructPrefName(prefnamebuffer,sr, SUFFIX_RETAIN),sr->retained_def);
   boolean measurementr = sr->measure(measurementbuffer);
   if(measurementr) {
-   return mqtt.publish(topic,measurementbuffer);
+    Serial.println(topic);
+   return mqtt.publish(topic,measurementbuffer,retain);
    }
    return false;
 }
 
-uint8_t MQTTService::getWaitTime(SensorReading *sr){
+uint32_t MQTTService::getWaitTime(SensorReading *sr){
    char prefnamebuffer[64];
-  pref.getUShort(constructPrefName(prefnamebuffer,sr, SUFFIX_WAIT),sr->sleepsecs);
+  return pref.getUInt(constructPrefName(prefnamebuffer,sr, SUFFIX_WAIT),sr->sleepsecs);
+}
+
+uint32_t gcd(uint32_t a, uint32_t b){
+  while(b!=0){
+    uint32_t h = a%b;
+    a = b;
+    b = h;
+  }
+  return a;
+}
+
+uint32_t MQTTService::getWaitTimeInterval(){   
+  uint32_t res=getWaitTime(&sensors[0]);
+  for(int i=1;i<noofsensors;i++){
+    res=gcd(res,getWaitTime(&sensors[i]));
+   }
+   return res;
+}
+
+uint32_t MQTTService::getMaxWaitTime(){   
+  uint32_t res=getWaitTime(&sensors[0]);
+  for(int i=1;i<noofsensors;i++){
+    res=std::max(res,getWaitTime(&sensors[i]));
+   }
+   return res;
+}
+
+void MQTTService::deepSleepLoop(uint32_t &sleeped){
+    connect();
+    for(int i=0;i<noofsensors;i++){
+     if((sleeped%getWaitTime(&sensors[i]))==0){
+      publishSensorReading(&sensors[i]);
+     }
+   }
+   disconnect();
+   if(sleeped%getMaxWaitTime()==0){
+    sleeped=0;
+   }
 }

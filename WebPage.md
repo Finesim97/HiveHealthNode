@@ -21,6 +21,7 @@ For each sensor the name, the description and a current value.
 
 ## wifi.html
 Just a fragment, will be placed inside the stuff used in the index.html!
+* Current network, ip
 * A overview of currently visible networks. (JavaScript: When the user clicks on one, the name gets placed inside the textbox) + Rescan button
 * SSID field
 * Radiobox menu with Personal/Enterprise selection, the others get disabled
