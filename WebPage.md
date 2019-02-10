@@ -51,9 +51,11 @@ Just a fragment, will be placed inside the stuff used in the index.html!
 * MQTT username
 * MQTT password
 * MQTT clientname
+
 Extra section with
 * test topic
 * test publish button
+
 Every sensor with
 * Name and description
 * Topic name field
