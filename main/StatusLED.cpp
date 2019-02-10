@@ -6,6 +6,7 @@ void StatusLED::begin(int _pin){
     pinMode(pin, OUTPUT);
     Serial.print("Setup LED");
 }
+
 void StatusLED::loop(){
     Serial.print("Hi LED!");
 }
