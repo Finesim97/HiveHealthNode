@@ -21,8 +21,6 @@
 #define LOOPTIME 1
 #define WIFIWAIT_MS 500
 
-
-StatusLED led;
 WiFiClient wifi;
 Preferences preferences;
 MQTTService mqtt (preferences, wifi, sensors, SENSORS);
@@ -34,6 +32,7 @@ unsigned long loopstarted = 0;
 
 void dsleep(uint32_t secs) {
   preferences.end();
+  setStatus(led_off);
   uint32_t actualsecs = secs - LOOPTIME - secswifilost;
   Serial.flush();
   secsleeped += secs;
@@ -42,10 +41,10 @@ void dsleep(uint32_t secs) {
 }
 
 void setup() {
-  led.begin(LED_PIN);
-  Serial.begin(115200);
   preferences.begin(PREFERENCE_NAMESPACE,false);
-  //Serial.println(preferences.putUInt("timesensor-sl",60*5));
+  LEDbegin(LED_PIN);
+  setStatus(led_booting);
+  Serial.begin(115200);
   WiFi.onEvent(WiFiEvent);
   WiFi.begin();
   int tries = 0;
@@ -55,13 +54,13 @@ void setup() {
   }
   secswifilost = tries;
   mqtt.begin();
+  setStatus(led_active);
   mqtt.deepSleepLoop(secsleeped);
   loopstarted = millis();
   firstboot = false;
 }
 
 void loop() {
-  led.loop();
   mqtt.loop();
   if (millis() - loopstarted >= LOOPTIME * 1000) {
     dsleep(mqtt.getWaitTimeInterval());
