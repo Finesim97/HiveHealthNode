@@ -5,9 +5,8 @@
 
 #include "MQTTService.h"
 
-boolean measureMilis(char* strbuffer);
 
-#define SENSORS 1
-extern SensorReading sensors[];
+#define SENSORS 3
+extern SensorReading sensors[SENSORS];
 
 #endif
