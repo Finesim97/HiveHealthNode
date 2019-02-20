@@ -6,6 +6,7 @@
 #include <WiFi.h> // WiFi Connectivity
 #include <Preferences.h> // Storing configuration in non volatile storage
 
+#include "Sensors.h"
 #include "MQTTService.h" // MQTT and Sensor connectivity
 #include "SetupServer.h" // HTTP Setup Server, only run at specific times
 #include "StatusLED.h" // Showing current activity with the LED
@@ -18,7 +19,15 @@
 #define LOOPTIME 1 // How many seconds should be spent in the loop() method
 #define WIFITRIES 10// How many times should we check again for ip connectivity
 #define WIFIWAIT_MS 1000 // How long to wait each try for WiFi to come available
-#define BAUDRATE 115200 // 
+#define BAUDRATE 115200 // Serial Baudrate
+
+/*
+ * Set the current action and writing it to the serial connection and the webserver
+ */
+void setState(const char* new_action){
+  Serial.println(new_action);
+}
+void (*wifiEventLogger) (const char*) = setState;
 
 WiFiClient wifi; // Object to interact with the Wifi class
 Preferences preferences; // Helper to store the user settings in NVS
@@ -38,8 +47,9 @@ void dsleep(uint32_t secs) {
   preferences.end();
   setStatus(led_off);
   uint32_t actualsecs = secs - LOOPTIME - secswifilost;
-  Serial.flush();
   secsleeped += secs;
+  setState("Going into deep sleep.");
+  Serial.flush();
   esp_sleep_enable_timer_wakeup(actualsecs * 1000000);
   esp_deep_sleep_start();
 }
@@ -48,21 +58,31 @@ void dsleep(uint32_t secs) {
  * Start every library and connect to the network
  */
 void setup() {
+  Serial.begin(BAUDRATE);
+  setState("Setup");
   preferences.begin(PREFERENCE_NAMESPACE,false);
   LEDbegin(LED_PIN);
   setStatus(led_booting);
-  Serial.begin(BAUDRATE);
   WiFi.onEvent(WiFiEvent);
+  setState("WiFi Start");
   WiFi.begin();
   int tries = 0;
   while (WiFi.status() != WL_CONNECTED && tries < WIFITRIES) {
+    setState("Waiting for connection...");
     delay(WIFIWAIT_MS);
     tries++;
   }
+  if(WiFi.status() != WL_CONNECTED ){
+    setState("Unable to connect!");
+  }else{
+    setState("Connected!");
+  }
   secswifilost = tries;
+  setState("Starting MQTT");
   mqtt.begin();
-  setStatus(led_active);
+  setState("Starting MQTT connection and sensor reading");
   mqtt.deepSleepLoop(secsleeped);
+  setState("Going into loop() calls");
   loopstarted = millis();
   firstboot = false;
 }
@@ -73,6 +93,7 @@ void setup() {
 void loop() {
   mqtt.loop();
   if (millis() - loopstarted >= LOOPTIME * 1000) {
+    setState("Preparing for deep sleep");
     dsleep(mqtt.getWaitTimeInterval());
   }
   delay(20);
