@@ -2,54 +2,61 @@
   For ESP32 board support follow this document:
   https://github.com/espressif/arduino-esp32/blob/master/docs/arduino-ide/boards_manager.md
 */
-#include <Arduino.h>
-#include <WiFi.h>
-#include <EEPROM.h>
-#include <Preferences.h>
 
-#include "MQTTService.h"
-#include "SetupServer.h"
-#include "StatusLED.h"
-#include "StatusServer.h"
-#include "WiFiStuff.h"
-#include "Sensors.h"
+#include <WiFi.h> // WiFi Connectivity
+#include <Preferences.h> // Storing configuration in non volatile storage
 
-#define PREFERENCE_NAMESPACE "hhnode"
-#define LED_PIN 2
-#define uS_TO_S_FACTOR 1000000
+#include "MQTTService.h" // MQTT and Sensor connectivity
+#include "SetupServer.h" // HTTP Setup Server, only run at specific times
+#include "StatusLED.h" // Showing current activity with the LED
+#include "StatusServer.h" // Showing current activity on a WebServer and Serial
+#include "WiFiStuff.h" //WiFi Helper methods
 
-#define LOOPTIME 1
-#define WIFIWAIT_MS 500
+#define PREFERENCE_NAMESPACE "hhnode" //Needed for the preference lib
+#define LED_PIN 2 // Which pin controls the LED
 
-WiFiClient wifi;
-Preferences preferences;
-MQTTService mqtt (preferences, wifi, sensors, SENSORS);
+#define LOOPTIME 1 // How many seconds should be spent in the loop() method
+#define WIFITRIES 10// How many times should we check again for ip connectivity
+#define WIFIWAIT_MS 1000 // How long to wait each try for WiFi to come available
+#define BAUDRATE 115200 // 
 
-RTC_DATA_ATTR boolean firstboot = true;
-RTC_DATA_ATTR uint32_t secsleeped = 0;
-uint16_t secswifilost = 0;
-unsigned long loopstarted = 0;
+WiFiClient wifi; // Object to interact with the Wifi class
+Preferences preferences; // Helper to store the user settings in NVS
+MQTTService mqtt (preferences, wifi, sensors, SENSORS); // Connects to the mqtt service and reads the sensors
 
+RTC_DATA_ATTR boolean firstboot = true; // Is this the first time booting after a reset or just after a deep sleep
+RTC_DATA_ATTR uint32_t secsleeped = 0; // How many seconds has the node slept, gets reset when the max wait time for a sensor has been reached
+uint16_t secswifilost = 0; // How many seconds did it take for wifi to come online, subtract that from the next sleep time
+unsigned long loopstarted = 0; // At which time (millis()) did we enter the loop method for the first time
+
+
+/*
+ * Go into to deep sleep for "secs" second, while disconnecting every connection and considering
+ * wifi connect time and the time spent in the loop() method calls.
+ */
 void dsleep(uint32_t secs) {
   preferences.end();
   setStatus(led_off);
   uint32_t actualsecs = secs - LOOPTIME - secswifilost;
   Serial.flush();
   secsleeped += secs;
-  esp_sleep_enable_timer_wakeup(actualsecs * uS_TO_S_FACTOR);
+  esp_sleep_enable_timer_wakeup(actualsecs * 1000000);
   esp_deep_sleep_start();
 }
 
+/*
+ * Start every library and connect to the network
+ */
 void setup() {
   preferences.begin(PREFERENCE_NAMESPACE,false);
   LEDbegin(LED_PIN);
   setStatus(led_booting);
-  Serial.begin(115200);
+  Serial.begin(BAUDRATE);
   WiFi.onEvent(WiFiEvent);
   WiFi.begin();
   int tries = 0;
-  while (WiFi.status() != WL_CONNECTED && tries < 10) {
-    delay(1000);
+  while (WiFi.status() != WL_CONNECTED && tries < WIFITRIES) {
+    delay(WIFIWAIT_MS);
     tries++;
   }
   secswifilost = tries;
@@ -60,6 +67,9 @@ void setup() {
   firstboot = false;
 }
 
+/*
+ * Some libraries may need time in the main loop to finish their operations
+ */
 void loop() {
   mqtt.loop();
   if (millis() - loopstarted >= LOOPTIME * 1000) {
