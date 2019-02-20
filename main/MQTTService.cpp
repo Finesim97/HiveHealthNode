@@ -1,5 +1,7 @@
 #include "MQTTService.h" 
 
+// See the header for documentation
+
 MQTTService::MQTTService(Preferences &_pref, Client &_wifi, SensorReading* _sensors, int _noofsensors):pref(_pref){
   sensors=_sensors;
   noofsensors=_noofsensors;
@@ -12,7 +14,7 @@ boolean MQTTService::loop(){
 }
 
 void MQTTService::begin(){
-  //TODO nothing to do here
+
 }
 
 boolean MQTTService::connect(){
@@ -65,6 +67,7 @@ uint32_t MQTTService::getWaitTime(SensorReading *sr){
   return pref.getUInt(constructPrefName(prefnamebuffer,sr, SUFFIX_WAIT),sr->sleepsecs);
 }
 
+// Small helper to find the greatest common divisor
 uint32_t gcd(uint32_t a, uint32_t b){
   while(b!=0){
     uint32_t h = a%b;
@@ -90,8 +93,11 @@ uint32_t MQTTService::getMaxWaitTime(){
    return res;
 }
 
-void MQTTService::deepSleepLoop(uint32_t &sleeped){
-    connect();
+bool MQTTService::deepSleepLoop(uint32_t &sleeped){
+    boolean connected=connect();
+    if(!connected){
+      return false;
+    }
     for(int i=0;i<noofsensors;i++){
      if((sleeped%getWaitTime(&sensors[i]))==0){
       publishSensorReading(&sensors[i]);
