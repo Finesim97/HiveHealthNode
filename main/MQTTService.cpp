@@ -2,9 +2,10 @@
 
 // See the header for documentation
 
-MQTTService::MQTTService(Preferences &_pref, Client &_wifi, SensorReading* _sensors, int _noofsensors):pref(_pref){
+MQTTService::MQTTService(Preferences &_pref, Client &_wifi, SensorReading* _sensors, int _noofsensors, void (*_logfunction) (const char*)):pref(_pref){
   sensors=_sensors;
   noofsensors=_noofsensors;
+  logfunction=_logfunction;
   pref.getString(MQTT_HOSTNAME,hostnamebuffer, MQTT_HOSTNAME_MAXLENGTH+1);
   mqtt = PubSubClient((const char*)hostnamebuffer, pref.getUShort(MQTT_PORT,MQTT_PORT_DEF), _wifi);
 }
@@ -45,6 +46,8 @@ char* constructPrefName(char* prefnamebuffer, SensorReading* sr, const char* suf
 }
 
 boolean MQTTService::publishSensorReading(SensorReading* sr){;
+  logfunction("Reading sensor settings");
+  logfunction(sr->sensorbaseName);
   topicbuffer[0]=(char)0;
   measurementbuffer[0]=(char)0;
   const char *topic=topicbuffer;
@@ -54,10 +57,19 @@ boolean MQTTService::publishSensorReading(SensorReading* sr){;
     topic=sr->sensorbaseName;
   }
   boolean retain = pref.getBool(constructPrefName(prefnamebuffer,sr, SUFFIX_RETAIN),sr->retained_def);
+  logfunction("Measuring...");
   boolean measurementr = sr->measure(measurementbuffer);
   if(measurementr) {
-    Serial.println(topic);
-   return mqtt.publish(topic,measurementbuffer,retain);
+      logfunction("Publishing result");
+       boolean published = mqtt.publish(topic,measurementbuffer,retain);
+       if(!published){
+          logfunction("Unable to publish!");
+          logfunction("MQTT State:");
+          logfunction(decodeMQTTStatus(mqtt.state()));
+        }
+       return published;
+   }else{
+      logfunction("Measurement failed!");
    }
    return false;
 }
@@ -93,8 +105,25 @@ uint32_t MQTTService::getMaxWaitTime(){
    return res;
 }
 
+const char* decodeMQTTStatus(int state){
+        switch(state){
+        case MQTT_CONNECTION_TIMEOUT: return ("MQTT timeout!");
+        case MQTT_CONNECTION_LOST: return("MQTT connection lost!");
+        case MQTT_CONNECT_FAILED: return("MQTT connection failed!");
+        case MQTT_DISCONNECTED: return("MQTT disconnected!");
+        case MQTT_CONNECTED: return("MQTT connected!");
+        case MQTT_CONNECT_BAD_PROTOCOL: return("MQTT bad protocol answer!");
+        case MQTT_CONNECT_BAD_CLIENT_ID: return("MQTT bad client id!");
+        case MQTT_CONNECT_UNAVAILABLE: return("MQTT unavailable!");
+        case MQTT_CONNECT_BAD_CREDENTIALS: return("MQTT bad credentials!");
+        case MQTT_CONNECT_UNAUTHORIZED: return("MQTT unauthorized!");
+      }
+}
+
 bool MQTTService::deepSleepLoop(uint32_t &sleeped){
+    logfunction("Connecting to the MQTT Server...");
     boolean connected=connect();
+    logfunction(decodeMQTTStatus(mqtt.state()));
     if(!connected){
       return false;
     }
@@ -103,6 +132,7 @@ bool MQTTService::deepSleepLoop(uint32_t &sleeped){
       publishSensorReading(&sensors[i]);
      }
    }
+   logfunction("Disconnecting from the MQTT Server.");
    disconnect();
    if(sleeped%getMaxWaitTime()==0){
     sleeped=0;

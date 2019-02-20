@@ -54,6 +54,11 @@ struct SensorReading{
 char* constructPrefName(char* prefnamebuffer, SensorReading* sr, const char* suffix); 
 
 /*
+ * Return a string describing the given mqtt.state() in a readable format
+ */
+const char* decodeMQTTStatus(int state);
+
+/*
  * The class that describes the interaction with the MQTT service and the sensors
  */
 class MQTTService{
@@ -67,8 +72,9 @@ class MQTTService{
       uint32_t getMaxWaitTime(); // What is the biggest wait interval
       bool deepSleepLoop(uint32_t &sleeped); // Measure the sensors, that need to be measured now and publish the results
       void disconnect(); // Disconnect the sensors
-      MQTTService(Preferences &_pref, Client &_wifi, SensorReading *_sensors, int _noofsensors); // Constructor that sets the variable
+      MQTTService(Preferences &_pref, Client &_wifi, SensorReading *_sensors, int _noofsensors, void (*logfunction) (const char*)); // Constructor that sets the variable
     private:
+      void (*logfunction) (const char*); // Action logger
       int noofsensors; // How long is the sensors array
       SensorReading *sensors; // The sensor array
       Preferences &pref; // The started connection to NVS

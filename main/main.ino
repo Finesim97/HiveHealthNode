@@ -31,7 +31,7 @@ void (*wifiEventLogger) (const char*) = setState;
 
 WiFiClient wifi; // Object to interact with the Wifi class
 Preferences preferences; // Helper to store the user settings in NVS
-MQTTService mqtt (preferences, wifi, sensors, SENSORS); // Connects to the mqtt service and reads the sensors
+MQTTService mqtt (preferences, wifi, sensors, SENSORS, setState); // Connects to the mqtt service and reads the sensors
 
 RTC_DATA_ATTR boolean firstboot = true; // Is this the first time booting after a reset or just after a deep sleep
 RTC_DATA_ATTR uint32_t secsleeped = 0; // How many seconds has the node slept, gets reset when the max wait time for a sensor has been reached
