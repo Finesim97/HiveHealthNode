@@ -1,4 +1,5 @@
 #include "MQTTService.h" 
+#include <numeric>
 
 // See the header for documentation
 
@@ -66,6 +67,8 @@ boolean MQTTService::publishSensorReading(SensorReading* sr){;
           logfunction("Unable to publish!");
           logfunction("MQTT State:");
           logfunction(decodeMQTTStatus(mqtt.state()));
+        }else{
+          logfunction("Published!");
         }
        return published;
    }else{
@@ -79,7 +82,6 @@ uint32_t MQTTService::getWaitTime(SensorReading *sr){
   return pref.getUInt(constructPrefName(prefnamebuffer,sr, SUFFIX_WAIT),sr->sleepsecs);
 }
 
-// Small helper to find the greatest common divisor
 uint32_t gcd(uint32_t a, uint32_t b){
   while(b!=0){
     uint32_t h = a%b;
@@ -89,20 +91,36 @@ uint32_t gcd(uint32_t a, uint32_t b){
   return a;
 }
 
-uint32_t MQTTService::getWaitTimeInterval(){   
-  uint32_t res=getWaitTime(&sensors[0]);
-  for(int i=1;i<noofsensors;i++){
-    res=gcd(res,getWaitTime(&sensors[i]));
-   }
-   return res;
+uint32_t lcm(uint32_t a, uint32_t b){
+  uint32_t thegcd=gcd(a, b);
+  return  thegcd ? (a / thegcd * b) : 0;
 }
 
-uint32_t MQTTService::getMaxWaitTime(){   
-  uint32_t res=getWaitTime(&sensors[0]);
-  for(int i=1;i<noofsensors;i++){
-    res=std::max(res,getWaitTime(&sensors[i]));
+uint32_t MQTTService::manageWaitTimeInterval(uint32_t &sleeped){   
+   uint32_t waittimes[noofsensors];
+   for(int i=0;i<noofsensors;i++){
+     waittimes[i]=getWaitTime(&sensors[i]);
    }
-   return res;
+  uint32_t maxwait=std::accumulate(waittimes, &waittimes[noofsensors-1], 1, lcm);
+  uint32_t waitinterval=std::accumulate(waittimes, &waittimes[noofsensors-1], waittimes[0],gcd);
+  uint32_t nextsleeped;
+  boolean breakl=false;
+  for(nextsleeped=sleeped+waitinterval;nextsleeped<maxwait;nextsleeped+=waitinterval){
+       for(int i=0;i<noofsensors;i++){
+          if(nextsleeped%waittimes[i]==0){
+            breakl=true;
+            break;
+            }
+        }
+        if(breakl){
+          break;
+         }
+  }
+  uint32_t tosleep=nextsleeped-sleeped;
+  if(nextsleeped==maxwait){
+    sleeped=0;
+  }
+   return tosleep;
 }
 
 const char* decodeMQTTStatus(int state){
@@ -134,7 +152,4 @@ bool MQTTService::deepSleepLoop(uint32_t &sleeped){
    }
    logfunction("Disconnecting from the MQTT Server.");
    disconnect();
-   if(sleeped%getMaxWaitTime()==0){
-    sleeped=0;
-   }
 }

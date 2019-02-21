@@ -94,7 +94,7 @@ void loop() {
   mqtt.loop();
   if (millis() - loopstarted >= LOOPTIME * 1000) {
     setState("Preparing for deep sleep");
-    dsleep(mqtt.getWaitTimeInterval());
+    dsleep(mqtt.manageWaitTimeInterval(secsleeped));
   }
   delay(20);
 }

@@ -1,17 +1,22 @@
 #include "Sensors.h"
 
+/*
+ * The sensoring methods
+ */
 
-boolean measureMilis(char* strbuffer) {
+// Read the the current run time
+boolean measureMilis(char* strbuffer) { 
   sprintf(strbuffer, "%d", millis());
   return true;
 }
 
+// Read the internal hall sensor
 boolean measureHall(char* strbuffer) {
   sprintf(strbuffer, "%d", hallRead());
   return true;
 }
 
-
+// Needed to use the internal temp sensor
 #ifdef __cplusplus
 extern "C" {
 #endif

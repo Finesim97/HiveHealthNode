@@ -68,8 +68,7 @@ class MQTTService{
       boolean connect(); // Start the connection, has it worked
       boolean publishSensorReading(SensorReading *sr); // Read and publish the given sensor
       uint32_t getWaitTime(SensorReading *sr); // What is the measurement interval for the given sensor
-      uint32_t getWaitTimeInterval(); // How long can we sleep, without missing a measurement
-      uint32_t getMaxWaitTime(); // What is the biggest wait interval
+      uint32_t manageWaitTimeInterval(uint32_t &sleeped); // How long can we sleep, without missing a measurement, resets the sleeped when needed
       bool deepSleepLoop(uint32_t &sleeped); // Measure the sensors, that need to be measured now and publish the results
       void disconnect(); // Disconnect the sensors
       MQTTService(Preferences &_pref, Client &_wifi, SensorReading *_sensors, int _noofsensors, void (*logfunction) (const char*)); // Constructor that sets the variable
