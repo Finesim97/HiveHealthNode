@@ -4,9 +4,77 @@ div.box{
 	margin: 0;
 	position: absolute;
 	top: 50%;
-	left:50%;
+	left: 50%;
 	-ms-transform: translate(-50%, -50%);
 	transform: translate(-50%, -50%);
 	
 	 
+}
+
+body {
+	
+	margin: 0px;
+	font-family: arial;
+	
+}
+
+
+#kopf{
+	
+	background-color: #3b3c36;
+	height: 70px;
+		
+}
+
+#kopf a {
+	
+	color: white;
+	text-decoration: none;
+	font-size: 30px;
+	font-weight: bold;
+	display: inline-block;
+	margin-top:  18px;
+	margin-left: 18px;
+	
+}
+
+#menu a {
+	
+	width: 16.666666666666%;
+	display: inline-block;
+	float: left;
+	text-align: center;
+	text-decoration: none;
+	color: #3b3c36;
+	
+	
+}
+
+#menu a:hover {
+	background-color: #ecf0f1;
+	
+}
+
+#gruen { 
+border-top: solid 5px lightgreen;
+}
+
+#rot { 
+border-top: solid 5px red;
+}
+
+#orange{ 
+border-top: solid 5px orange;
+}
+
+#blau { 
+border-top: solid 5px lightblue;
+}
+
+#violett { 
+border-top: solid 5px lightpink;
+}
+
+#gelb{ 
+border-top: solid 5px yellow;
 }
