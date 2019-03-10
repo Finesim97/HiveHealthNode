@@ -13,6 +13,8 @@ install:
   - arduino --pref "boardsmanager.additional.urls=https://dl.espressif.com/dl/package_esp32_index.json" --save-prefs
   - arduino --install-boards esp32:esp32 --save-prefs
   - arduino --install-library "PubSubClient"
+  - git clone https://github.com/me-no-dev/AsyncTCP.git ~/Sketchbook/libraries/AsyncTCP
+  - git clone https://github.com/me-no-dev/ESPAsyncWebServer.git ~/Sketchbook/libraries/ESPAsyncWebServer
 script:
   - arduino --verify --board $board $PWD/main/main.ino 
   - arduino --verify --board $board $PWD/mqtttest/mqtttest.ino

@@ -61,8 +61,14 @@ boolean MQTTService::publishSensorReading(SensorReading* sr){;
   logfunction("Measuring...");
   boolean measurementr = sr->measure(measurementbuffer);
   if(measurementr) {
-      logfunction("Publishing result");
+       logfunction("Publishing result");
+       uint8_t tries=0;
        boolean published = mqtt.publish(topic,measurementbuffer,retain);
+       while (!published && tries < 3) {
+          published = mqtt.publish(topic,measurementbuffer,retain);
+          delay(100);
+          tries++;
+        }
        if(!published){
           logfunction("Unable to publish!");
           logfunction("MQTT State:");
@@ -139,8 +145,14 @@ const char* decodeMQTTStatus(int state){
 }
 
 bool MQTTService::deepSleepLoop(uint32_t &sleeped){
+    uint8_t tries=1;
     logfunction("Connecting to the MQTT Server...");
     boolean connected=connect();
+    while (!connected && tries < 3) {
+     connected=connect();
+     delay(100);
+     tries++;
+    }
     logfunction(decodeMQTTStatus(mqtt.state()));
     if(!connected){
       return false;
