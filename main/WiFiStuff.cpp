@@ -2,6 +2,7 @@
 
 void WiFiEvent(WiFiEvent_t event)
 {
+  return;
     switch (event) {
         case SYSTEM_EVENT_WIFI_READY: 
             wifiEventLogger("WiFi interface ready");

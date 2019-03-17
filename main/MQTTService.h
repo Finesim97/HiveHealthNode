@@ -11,7 +11,7 @@
 // MQTT hostname
 #define MQTT_HOSTNAME  "mqtthost"
 #define MQTT_HOSTNAME_MAXLENGTH 255  // Not including NULL character!
-#define MQTT_HOSTNAME_DEF  "test.mosquitto.org"
+#define MQTT_HOSTNAME_DEF  "broker.mqttdashboard.com"
 // MQTT port
 #define MQTT_PORT "mqttport"
 #define MQTT_PORT_DEF 1883  // Datatype: uint16_t
@@ -63,7 +63,6 @@ const char* decodeMQTTStatus(int state);
  */
 class MQTTService{
     public:
-      void begin(); // Initialize everything
       boolean loop(); // Just redirect that to the lib
       boolean connect(); // Start the connection, has it worked
       boolean publishSensorReading(SensorReading *sr); // Read and publish the given sensor
@@ -72,6 +71,7 @@ class MQTTService{
       bool deepSleepLoop(uint32_t &sleeped); // Measure the sensors, that need to be measured now and publish the results
       void disconnect(); // Disconnect the sensors
       MQTTService(Preferences &_pref, Client &_wifi, SensorReading *_sensors, int _noofsensors, void (*logfunction) (const char*)); // Constructor that sets the variable
+      char* getClientName();
     private:
       void (*logfunction) (const char*); // Action logger
       int noofsensors; // How long is the sensors array

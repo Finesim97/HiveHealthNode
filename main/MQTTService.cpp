@@ -15,14 +15,16 @@ boolean MQTTService::loop(){
   return mqtt.loop(); 
 }
 
-void MQTTService::begin(){
-
-}
+char* MQTTService::getClientName(){
+            strcpy(clientnamebuffer,MQTT_CLIENTNAME_DEF);
+            pref.getString(MQTT_CLIENTNAME,clientnamebuffer, MQTT_CLIENTNAME_MAXLENGTH+1);
+            return clientnamebuffer;
+       };
 
 boolean MQTTService::connect(){
-  clientnamebuffer[0] = (char)0;
-  usernamenamebuffer[0] = (char)0;
-  passwordbuffer[0] = (char)0;
+  strcpy(clientnamebuffer,MQTT_CLIENTNAME_DEF);
+  strcpy(usernamenamebuffer,MQTT_USERNAME_DEF);
+  strcpy(passwordbuffer,MQTT_PASS_DEF);
   const char *id=clientnamebuffer, *user=usernamenamebuffer, *pass=passwordbuffer;
   pref.getString(MQTT_CLIENTNAME,clientnamebuffer, MQTT_CLIENTNAME_MAXLENGTH+1);
   pref.getString(MQTT_USERNAME,usernamenamebuffer, MQTT_USERNAME_MAXLENGTH+1);
