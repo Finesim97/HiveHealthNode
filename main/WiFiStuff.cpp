@@ -80,3 +80,32 @@ void WiFiEvent(WiFiEvent_t event)
             wifiEventLogger("Obtained IP address");
             break;
     }}
+
+const char* ssid = "eduroam"; // Eduroam 
+
+boolean connectWifi(Preferences &pref, boolean ap_enabled, char* apname){
+  if(ap_enabled&&WiFi.getMode()!=WIFI_AP_STA){
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.softAP(apname);
+  }
+  if(!ap_enabled&&WiFi.getMode()!=WIFI_STA){
+     WiFi.mode(WIFI_STA);
+  }
+  int tries = 0;
+  while (WiFi.status() != WL_CONNECTED && tries < WIFITRIES) {
+   //WiFi.disconnect();
+  if(true){
+ esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)EAP_IDENTITY, strlen(EAP_IDENTITY)); //provide identity
+  esp_wifi_sta_wpa2_ent_set_username((uint8_t *)EAP_IDENTITY, strlen(EAP_IDENTITY)); //provide username --> identity and username is same
+  esp_wifi_sta_wpa2_ent_set_password((uint8_t *)EAP_PASSWORD, strlen(EAP_PASSWORD)); //provide password
+  esp_wpa2_config_t config = WPA2_CONFIG_INIT_DEFAULT(); //set config settings to default
+  esp_wifi_sta_wpa2_ent_enable(&config); //set config settings to enable function
+    WiFi.begin(ssid); //connect to wifi
+  }else{
+    WiFi.begin();
+  }
+    delay(WIFIWAIT_MS);
+    tries++;
+  }
+  return WiFi.status() == WL_CONNECTED;
+ }

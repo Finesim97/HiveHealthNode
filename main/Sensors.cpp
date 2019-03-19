@@ -34,4 +34,4 @@ boolean measureT(char* strbuffer){
 
 
 // Remeber to set the SENSORS variable in the header
-SensorReading sensors[] = {{"timesensor", true, measureMilis, 10},{"hall",false,measureHall,50},{"intemp",false,measureT,5}};
+SensorReading sensors[] = {{"timesensor", true, measureMilis, 10},{"hall",false,measureHall,50},{"intemp",false,measureT,15}};
