@@ -109,8 +109,8 @@ uint32_t MQTTService::manageWaitTimeInterval(uint32_t &sleeped){
    for(int i=0;i<noofsensors;i++){
      waittimes[i]=getWaitTime(&sensors[i]);
    }
-  uint32_t maxwait=std::accumulate(waittimes, &waittimes[noofsensors-1], 1, lcm);
-  uint32_t waitinterval=std::accumulate(waittimes, &waittimes[noofsensors-1], waittimes[0],gcd);
+  uint32_t maxwait=std::accumulate(waittimes, &waittimes[noofsensors], 1, lcm);
+  uint32_t waitinterval=std::accumulate(waittimes, &waittimes[noofsensors], waittimes[0],gcd);
   uint32_t nextsleeped;
   boolean breakl=false;
   for(nextsleeped=sleeped+waitinterval;nextsleeped<maxwait;nextsleeped+=waitinterval){
