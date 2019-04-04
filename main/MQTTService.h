@@ -15,6 +15,8 @@
 // MQTT port
 #define MQTT_PORT "mqttport"
 #define MQTT_PORT_DEF 1883  // Datatype: uint16_t
+#define MQTT_PORT_MAX 65535
+#define MQTT_PORT_MIN 65535
 // MQTT client name
 #define MQTT_CLIENTNAME "cname"
 #define MQTT_CLIENTNAME_MAXLENGTH 127
@@ -30,9 +32,11 @@
 
 
 // buffer size for the topics
-#define TOPICBUFFERLEN 128
+#define TOPICMEASUREBUFFERLEN 127
+#define PREFFBUFFERSIZE 63
 
 // Suffixes for the different sensor related settings, used to generate the names
+#define SENSORNAMELEN 31
 #define SUFFIX_RETAIN "-rtn" // Suffix for the MQTT retain value (true/flase)
 #define SUFFIX_TOPIC "-tc" // Suffix for the MQTT topic name
 #define SUFFIX_WAIT "-sl"// Suffix for the sensor sleep time
@@ -42,7 +46,7 @@
  * This struct describes a sensor
  */
 struct SensorReading{ 
-  const char sensorbaseName[64]; // Basename of the sensor
+  const char sensorbaseName[SENSORNAMELEN]; // Basename of the sensor
   const boolean retained_def; // Should the value be retained in MQTT by default
   boolean (*measure)(char* strbuffer); // The function which measures this value
   const uint32_t sleepsecs; // What is the default measuring interval
@@ -51,7 +55,7 @@ struct SensorReading{
 /*
  * Construct the name of the setting in the given char buffer
  */
-char* constructPrefName(char* prefnamebuffer, SensorReading* sr, const char* suffix); 
+char* constructPrefName(char* prefnamebuffer, SensorReading& sr, const char* suffix); 
 
 /*
  * Return a string describing the given mqtt.state() in a readable format
@@ -65,8 +69,8 @@ class MQTTService{
     public:
       boolean loop(); // Just redirect that to the lib
       boolean connect(); // Start the connection, has it worked
-      boolean publishSensorReading(SensorReading *sr); // Read and publish the given sensor
-      uint32_t getWaitTime(SensorReading *sr); // What is the measurement interval for the given sensor
+      boolean publishSensorReading(SensorReading &sr); // Read and publish the given sensor
+      uint32_t getWaitTime(SensorReading &sr); // What is the measurement interval for the given sensor
       uint32_t manageWaitTimeInterval(uint32_t &sleeped); // How long can we sleep, without missing a measurement, resets the sleeped when needed
       bool deepSleepLoop(uint32_t &sleeped); // Measure the sensors, that need to be measured now and publish the results
       void disconnect(); // Disconnect the sensors
@@ -83,7 +87,7 @@ class MQTTService{
       char clientnamebuffer[MQTT_CLIENTNAME_MAXLENGTH+1]=MQTT_CLIENTNAME_DEF;
       char usernamenamebuffer[MQTT_USERNAME_MAXLENGTH+1]=MQTT_USERNAME_DEF;
       char passwordbuffer[MQTT_PASS_MAXLENGTH+1]=MQTT_PASS_DEF;
-      char measurementbuffer[MQTT_MAX_PACKET_SIZE];
-      char topicbuffer[TOPICBUFFERLEN];
+      char measurementbuffer[TOPICMEASUREBUFFERLEN];
+      char topicbuffer[TOPICMEASUREBUFFERLEN];
 };
 #endif

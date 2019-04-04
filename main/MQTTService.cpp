@@ -42,26 +42,26 @@ void MQTTService::disconnect(){
   mqtt.disconnect();
 }
 
-char* constructPrefName(char* prefnamebuffer, SensorReading* sr, const char* suffix){
-  strcpy(prefnamebuffer,sr->sensorbaseName);
+char* constructPrefName(char* prefnamebuffer, SensorReading &sr, const char* suffix){
+  strcpy(prefnamebuffer,sr.sensorbaseName);
   strcat(prefnamebuffer,suffix);
   return prefnamebuffer;
 }
 
-boolean MQTTService::publishSensorReading(SensorReading* sr){;
+boolean MQTTService::publishSensorReading(SensorReading &sr){;
   logfunction("Reading sensor settings");
-  logfunction(sr->sensorbaseName);
+  logfunction(sr.sensorbaseName);
   topicbuffer[0]=(char)0;
   measurementbuffer[0]=(char)0;
   const char *topic=topicbuffer;
-  char prefnamebuffer[64];
-  pref.getString(constructPrefName(prefnamebuffer,sr, SUFFIX_TOPIC),topicbuffer, TOPICBUFFERLEN);
+  char prefnamebuffer[PREFFBUFFERSIZE];
+  pref.getString(constructPrefName(prefnamebuffer,sr, SUFFIX_TOPIC),topicbuffer, TOPICMEASUREBUFFERLEN);
   if(strlen(topic)==0){
-    topic=sr->sensorbaseName;
+    topic=&sr.sensorbaseName[0];
   }
-  boolean retain = pref.getBool(constructPrefName(prefnamebuffer,sr, SUFFIX_RETAIN),sr->retained_def);
+  boolean retain = pref.getBool(constructPrefName(prefnamebuffer,sr, SUFFIX_RETAIN),sr.retained_def);
   logfunction("Measuring...");
-  boolean measurementr = sr->measure(measurementbuffer);
+  boolean measurementr = sr.measure(measurementbuffer);
   if(measurementr) {
        logfunction("Publishing result");
        uint8_t tries=0;
@@ -85,9 +85,9 @@ boolean MQTTService::publishSensorReading(SensorReading* sr){;
    return false;
 }
 
-uint32_t MQTTService::getWaitTime(SensorReading *sr){
-   char prefnamebuffer[64];
-  return pref.getUInt(constructPrefName(prefnamebuffer,sr, SUFFIX_WAIT),sr->sleepsecs);
+uint32_t MQTTService::getWaitTime(SensorReading &sr){
+   char prefnamebuffer[PREFFBUFFERSIZE];
+  return pref.getUInt(constructPrefName(prefnamebuffer,sr, SUFFIX_WAIT),sr.sleepsecs);
 }
 
 uint32_t gcd(uint32_t a, uint32_t b){
@@ -107,7 +107,7 @@ uint32_t lcm(uint32_t a, uint32_t b){
 uint32_t MQTTService::manageWaitTimeInterval(uint32_t &sleeped){   
    uint32_t waittimes[noofsensors];
    for(int i=0;i<noofsensors;i++){
-     waittimes[i]=getWaitTime(&sensors[i]);
+     waittimes[i]=getWaitTime(sensors[i]);
    }
   uint32_t maxwait=std::accumulate(waittimes, &waittimes[noofsensors], 1, lcm);
   uint32_t waitinterval=std::accumulate(waittimes, &waittimes[noofsensors], waittimes[0],gcd);
@@ -160,8 +160,8 @@ bool MQTTService::deepSleepLoop(uint32_t &sleeped){
       return false;
     }
     for(int i=0;i<noofsensors;i++){
-     if((sleeped%getWaitTime(&sensors[i]))==0){
-      publishSensorReading(&sensors[i]);
+     if((sleeped%getWaitTime(sensors[i]))==0){
+      publishSensorReading(sensors[i]);
      }
    }
    logfunction("Disconnecting from the MQTT Server.");
