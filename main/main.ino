@@ -6,6 +6,7 @@
 #include <WiFi.h> // WiFi Connectivity
 #include <Preferences.h> // Storing configuration in non volatile storage
 #include <ESPmDNS.h> //blabla.local hostnames
+#include "esp_system.h"
 
 #include "Sensors.h"
 #include "MQTTService.h" // MQTT and Sensor connectivity
@@ -13,6 +14,8 @@
 #include "StatusLED.h" // Showing current activity with the LED
 #include "StatusServer.h" // Showing current activity on a WebServer and Serial
 #include "WiFiStuff.h" //WiFi Helper methods
+#include "SetupServer.h"
+
 
 #define PREFERENCE_NAMESPACE "hhnode" //Needed for the preference lib
 #define NODSLEEP_PREF "nodsleep" //Preference to prevent deepsleep
@@ -34,6 +37,15 @@ void setState(const char* new_action){
   statusserver.log(new_action);
 }
 MQTTService mqtt (preferences, wifi, sensors, SENSORS, setState); // Connects to the mqtt service and reads the sensors
+char* constructName(){
+ uint8_t mac[6]; //3 4 5 device
+ esp_read_mac(mac, ESP_MAC_WIFI_STA);
+ char str[14] = {0};
+ sprintf(str,"hhnode-%02X%02X%02X", mac[3], mac[4], mac[5]);
+ return str;
+}
+char* devname = constructName();
+WifiCon wificon (preferences,devname);
 void (*wifiEventLogger) (const char*) = setState;
 
 RTC_DATA_ATTR boolean firstboot = true; // Is this the first time booting after a reset or just after a deep sleep
@@ -54,15 +66,14 @@ void setup() {
   preferences.begin(PREFERENCE_NAMESPACE,false);
   LEDbegin(LED_PIN);
   setStatus(led_booting);
-  WiFi.onEvent(WiFiEvent);
+  //WiFi.onEvent(WiFiEvent);
   setupneeded=false;
   }
   setState("WiFi Start");
-  char* clientname=mqtt.getClientName(); 
-  boolean connected=connectWifi(preferences,true, clientname);
+  boolean connected=wificon.connect(true);
   statusserver.begin();
   setState(connected?"WiFi connected°!":"WiFi not connected!?");
-    boolean mdnsstart=MDNS.begin(clientname);
+    boolean mdnsstart=MDNS.begin(devname);
   if(mdnsstart){
       MDNS.addService("http", "tcp", 80);
     }else{
