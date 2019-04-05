@@ -99,6 +99,7 @@ void dsleep(uint32_t secs) {
   uint32_t actualsecs = secstosleep>0?secstosleep:0;
   secsleeped += secs;
    setState("ZZZ... ZZZ...");
+   getCurrentConfigJSON(preferences);
   if(actualsecs <  MINDSLEEPTIME || nodsleep){
     delay(actualsecs*1000+1);
     setup();
