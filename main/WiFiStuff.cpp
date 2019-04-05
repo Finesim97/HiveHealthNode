@@ -1,109 +1,69 @@
 #include "WiFiStuff.h"
 
-void WiFiEvent(WiFiEvent_t event)
-{
-  return;
-    switch (event) {
-        case SYSTEM_EVENT_WIFI_READY: 
-            wifiEventLogger("WiFi interface ready");
-            break;
-        case SYSTEM_EVENT_SCAN_DONE:
-            wifiEventLogger("Completed scan for access points");
-            break;
-        case SYSTEM_EVENT_STA_START:
-            wifiEventLogger("WiFi client started");
-            break;
-        case SYSTEM_EVENT_STA_STOP:
-            wifiEventLogger("WiFi clients stopped");
-            break;
-        case SYSTEM_EVENT_STA_CONNECTED:
-            wifiEventLogger("Connected to access point");
-            break;
-        case SYSTEM_EVENT_STA_DISCONNECTED:
-            wifiEventLogger("Disconnected from WiFi access point");
-            break;
-        case SYSTEM_EVENT_STA_AUTHMODE_CHANGE:
-            wifiEventLogger("Authentication mode of access point has changed");
-            break;
-        case SYSTEM_EVENT_STA_GOT_IP:
-            wifiEventLogger("Obtained IP address");
-            break;
-        case SYSTEM_EVENT_STA_LOST_IP:
-            wifiEventLogger("Lost IP address and IP address is reset to 0");
-            break;
-        case SYSTEM_EVENT_STA_WPS_ER_SUCCESS:
-            wifiEventLogger("WiFi Protected Setup (WPS): succeeded in enrollee mode");
-            break;
-        case SYSTEM_EVENT_STA_WPS_ER_FAILED:
-            wifiEventLogger("WiFi Protected Setup (WPS): failed in enrollee mode");
-            break;
-        case SYSTEM_EVENT_STA_WPS_ER_TIMEOUT:
-            wifiEventLogger("WiFi Protected Setup (WPS): timeout in enrollee mode");
-            break;
-        case SYSTEM_EVENT_STA_WPS_ER_PIN:
-            wifiEventLogger("WiFi Protected Setup (WPS): pin code in enrollee mode");
-            break;
-        case SYSTEM_EVENT_AP_START:
-            wifiEventLogger("WiFi access point started");
-            break;
-        case SYSTEM_EVENT_AP_STOP:
-            wifiEventLogger("WiFi access point  stopped");
-            break;
-        case SYSTEM_EVENT_AP_STACONNECTED:
-            wifiEventLogger("Client connected");
-            break;
-        case SYSTEM_EVENT_AP_STADISCONNECTED:
-            wifiEventLogger("Client disconnected");
-            break;
-        case SYSTEM_EVENT_AP_STAIPASSIGNED:
-            wifiEventLogger("Assigned IP address to client");
-            break;
-        case SYSTEM_EVENT_AP_PROBEREQRECVED:
-            wifiEventLogger("Received probe request");
-            break;
-        case SYSTEM_EVENT_GOT_IP6:
-            wifiEventLogger("IPv6 is preferred");
-            break;
-        case SYSTEM_EVENT_ETH_START:
-            wifiEventLogger("Ethernet started");
-            break;
-        case SYSTEM_EVENT_ETH_STOP:
-            wifiEventLogger("Ethernet stopped");
-            break;
-        case SYSTEM_EVENT_ETH_CONNECTED:
-            wifiEventLogger("Ethernet connected");
-            break;
-        case SYSTEM_EVENT_ETH_DISCONNECTED:
-            wifiEventLogger("Ethernet disconnected");
-            break;
-        case SYSTEM_EVENT_ETH_GOT_IP:
-            wifiEventLogger("Obtained IP address");
-            break;
-    }}
+esp_wps_config_t WifiCon::wpsInitConfig(){
+  esp_wps_config_t config;
+  config.crypto_funcs = &g_wifi_default_wps_crypto_funcs;
+  config.wps_type = ESP_WPS_MODE;
+  strcpy(config.factory_info.manufacturer, ESP_MANUFACTURER);
+  strcpy(config.factory_info.model_number, ESP_MODEL_NUMBER);
+  strcpy(config.factory_info.model_name, ESP_MODEL_NAME);
+  strcpy(config.factory_info.device_name, apname);
+  return config;
+}
 
-const char* ssid = "eduroam"; // Eduroam 
+WifiCon::WifiCon(Preferences &_pref, char* _apname):pref(_pref){
+  apname=_apname;
+}
 
-boolean connectWifi(Preferences &pref, boolean ap_enabled, char* apname){
+void WifiCon::startWPS(){
+    esp_wifi_wps_disable();
+    esp_wps_config_t c =wpsInitConfig(); 
+    esp_wifi_wps_enable(&c);
+    esp_wifi_wps_start(0);
+}
+
+boolean WifiCon::connect(boolean ap_enabled){
+  const char *ssid=ssidbuffer, *id=identitybuffer, *wifipass=wifipassbuffer, *appass=appassbuffer;
   if(ap_enabled&&WiFi.getMode()!=WIFI_AP_STA){
-  WiFi.mode(WIFI_AP_STA);
-  WiFi.softAP(apname);
+    strcpy(appassbuffer,WIFI_APPASS_DEF);
+    pref.getString(WIFI_APPASS,appassbuffer, WIFI_APPASS_MAXLENGTH+1);
+    WiFi.mode(WIFI_AP_STA);
+    if(strlen(appassbuffer)>0){
+       WiFi.softAP(apname,appass);
+    }else{
+       WiFi.softAP(apname);
+    }
   }
   if(!ap_enabled&&WiFi.getMode()!=WIFI_STA){
      WiFi.mode(WIFI_STA);
   }
+  strcpy(ssidbuffer,WIFI_SSID_DEF);
+  pref.getString(WIFI_SSID,ssidbuffer, WIFI_SSID_MAXLENGTH+1);
   int tries = 0;
   while (WiFi.status() != WL_CONNECTED && tries < WIFITRIES) {
-   //WiFi.disconnect();
-  if(true){
- esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)EAP_IDENTITY, strlen(EAP_IDENTITY)); //provide identity
-  esp_wifi_sta_wpa2_ent_set_username((uint8_t *)EAP_IDENTITY, strlen(EAP_IDENTITY)); //provide username --> identity and username is same
-  esp_wifi_sta_wpa2_ent_set_password((uint8_t *)EAP_PASSWORD, strlen(EAP_PASSWORD)); //provide password
-  esp_wpa2_config_t config = WPA2_CONFIG_INIT_DEFAULT(); //set config settings to default
-  esp_wifi_sta_wpa2_ent_enable(&config); //set config settings to enable function
+  if(pref.getBool(WIFI_USEEAP,WIFI_USEEAP_DEF)){
+    strcpy(identitybuffer,WIFI_IDENTITY_DEF);
+    pref.getString(WIFI_IDENTITY,identitybuffer, WIFI_IDENTITY_MAXLENGTH+1);
+    esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)identitybuffer, strlen(identitybuffer));
+    esp_wifi_sta_wpa2_ent_set_username((uint8_t *)identitybuffer, strlen(identitybuffer)); 
+    strcpy(userpassbuffer,WIFI_USERPASS_DEF);
+    pref.getString(WIFI_USERPASS,userpassbuffer, WIFI_USERPASS_MAXLENGTH+1);
+    esp_wifi_sta_wpa2_ent_set_password((uint8_t *)userpassbuffer, strlen(userpassbuffer)); 
     WiFi.begin(ssid); //connect to wifi
-  }else{
+  }else if(pref.getBool(WIFI_USEWPS,WIFI_USEWPS_DEF)){
+    esp_wifi_wps_disable();
+    esp_wps_config_t c =wpsInitConfig(); 
+    esp_wifi_wps_enable(&c);
     WiFi.begin();
-  }
+  }else{
+     strcpy(wifipassbuffer,WIFI_PASS_DEF);
+     pref.getString(WIFI_PASS,wifipassbuffer, WIFI_PASS_MAXLENGTH+1);
+     if(strlen(wifipassbuffer)>0){
+           WiFi.begin(ssid,wifipass);
+     }else{
+           WiFi.begin(ssid);
+     }
+    }
     delay(WIFIWAIT_MS);
     tries++;
   }
