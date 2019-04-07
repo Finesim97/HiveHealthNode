@@ -9,5 +9,6 @@
 #include <Preferences.h>
 
 void getCurrentConfigJSON(Preferences &p);
+boolean setConfigJSON(Preferences &p, char* jsonstr);
 
 #endif
