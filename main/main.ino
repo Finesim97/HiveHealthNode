@@ -12,7 +12,6 @@
 #include "MQTTService.h" // MQTT and Sensor connectivity
 #include "SetupServer.h" // HTTP Setup Server, only run at specific times
 #include "StatusLED.h" // Showing current activity with the LED
-#include "StatusServer.h" // Showing current activity on a WebServer and Serial
 #include "WiFiStuff.h" //WiFi Helper methods
 #include "SetupServer.h"
 
@@ -28,13 +27,13 @@
 
 WiFiClient wifi; // Object to interact with the Wifi class
 Preferences preferences; // Helper to store the user settings in NVS
-StatusServer statusserver(80); //Status WS Server
+SetupServer setupserver(80); //Status WS Server
 /*
  * Set the current action and writing it to the serial connection and the webserver
  */
 void setState(const char* new_action){
   Serial.println(new_action);
-  statusserver.log(new_action);
+  setupserver.log(new_action);
 }
 MQTTService mqtt (preferences, wifi, sensors, SENSORS, setState); // Connects to the mqtt service and reads the sensors
 char* constructName(){
@@ -71,7 +70,7 @@ void setup() {
   }
   setState("WiFi Start");
   boolean connected=wificon.connect(true);
-  statusserver.begin();
+  setupserver.begin();
   setState(connected?"WiFi connected°!":"WiFi not connected!?");
     boolean mdnsstart=MDNS.begin(devname);
   if(mdnsstart){
