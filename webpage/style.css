@@ -26,7 +26,7 @@ body {
 		
 }
 
-#kopf a {
+#kopf a{
 	
 	color: white;
 	text-decoration: none;
@@ -34,47 +34,80 @@ body {
 	font-weight: bold;
 	display: inline-block;
 	margin-top:  18px;
-	margin-left: 18px;
+	margin-left: 10px;
 	
+}
+
+#abmelden{
+	position:absolute;
+	right: 10px;
+	top: 21px;
 }
 
 #menu a {
 	
-	width: 16.666666666666%;
-	display: inline-block;
-	float: left;
-	text-align: center;
 	text-decoration: none;
 	color: #3b3c36;
 	
+}
+
+#menu div{
+	flex-grow: 1;
+	flex-basis: 100px;
+	text-align: center;
+}
+
+#menu{
+	display: flex;
+	flex-wrap: wrap;
 	
 }
 
-#menu a:hover {
+#menu div:hover {
 	background-color: #ecf0f1;
 	
 }
 
-#gruen { 
+#menu .current a{
+	font-weight: bold;
+}
+
+#Sensoren{
+margin-top: 20px
+
+}
+
+#MQTT{
+margin-top: 20px
+
+}
+
+#Wifi{
+margin-top: 20px
+
+}
+
+
+#sensors { 
 border-top: solid 5px lightgreen;
 }
 
-#rot { 
+#wifi{ 
 border-top: solid 5px red;
 }
 
-#orange{ 
+#mqtt{ 
 border-top: solid 5px orange;
 }
 
-#blau { 
+#reboot { 
 border-top: solid 5px lightblue;
 }
 
-#violett { 
+#update { 
 border-top: solid 5px lightpink;
 }
 
-#gelb{ 
+#reset{ 
 border-top: solid 5px yellow;
 }

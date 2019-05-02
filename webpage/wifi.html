@@ -9,25 +9,50 @@
 </head>
 
 <body>
-
+	
 	<div id="kopf">
-		<a href="index.html" >HighHealth</a>
-	
-	
+		<a id="index" href="index.html" >HighHealth</a>
+		
 	</div>
-
+	
 	<div id="menu">
 	
-		<a id="gruen" href="sensors.html">Sensoren</a>
-		<a id="rot" href="wifi.html">Wifi</a>
-		<a id="violett" href="mqtt.html">MQTT</a>
-		<a id= "blau" href="reboot.do">Reboot</a>
-		<a id= "orange" href="update.html">Updates</a>
-		<a id = "gelb" href="reset.html">Reset</a>
+		<div id="sensors" ><a href="sensors.html">Sensoren</a></div>
+		<div id="wifi" class="current"><a href="wifi.html">Wifi</a></div>
+		<div id="mqtt"><a  href="mqtt.html">MQTT</a></div>
+		<div id= "reboot"><a href="reboot.do">Reboot</a></div>
+		<div id= "update"><a  href="update.html">Updates</a></div>
+		<div id = "reset"><a  href="reset.html">Reset</a></div>
 	
 	</div>
 	
+	<div>
+		<a id="abmelden" href="login.html"><button>abmelden</button></a>
+	</div>
+	
+	<div id="Wifi">
+		<a>SSid:</a> 
+		<a id="ssid">test</a>
+		<br/>
+		<a>Wifi Pass:</a> 
+		<a id="wifipass">test</a>
+		<br/>
+		<a>Wifi Appass:</a> 
+		<a id="wifiappass">test</a>
+		<br/>
+		<a>Wifi User:</a> 
+		<a id="wifiuser">test</a>
+		<br/>
+		<a>Wifi Userpass:</a> 
+		<a id="wifiuserpass">test</a>
+		<br/>
+		<a>Wifi Eap:</a> 
+		<a id="wifieap">test</a>
+		<br/>
+		<a>Wifi Wps:</a> 
+		<a id="wifiwps">test</a>
 		
+	
 </body>
 
 </html>
