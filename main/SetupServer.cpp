@@ -1,8 +1,4 @@
 #include "SetupServer.h"
-#include "MQTTService.h"
-#include "Sensors.h"
-#include "WiFiStuff.h"
-#include <Preferences.h>
 
 
 JsonObject searchForObj(JsonArray &arr, const char* fieldname, const char* value){

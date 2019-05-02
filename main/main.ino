@@ -59,14 +59,14 @@ boolean setupneeded=true;
  * Start every library and connect to the network
  */
 void setup() {
-    long setupstart=millis();
+  long setupstart=millis();
   if(setupneeded){
   Serial.begin(BAUDRATE);
   setState("Setup");
+  WiFi.onEvent(WiFiEvent);
   preferences.begin(PREFERENCE_NAMESPACE,false);
   LEDbegin(LED_PIN);
   setStatus(led_booting);
-  //WiFi.onEvent(WiFiEvent);
   setupneeded=false;
   }
   setState("WiFi Start");
@@ -79,6 +79,7 @@ void setup() {
     }else{
         setState("Error starting mDNS!");
    }
+ // WiFi.printDiag(Serial);
   setState("Starting MQTT connection and sensor reading");
   mqtt.deepSleepLoop(secsleeped);
   setState("Going into loop() calls");
@@ -99,7 +100,6 @@ void dsleep(uint32_t secs) {
   uint32_t actualsecs = secstosleep>0?secstosleep:0;
   secsleeped += secs;
    setState("ZZZ... ZZZ...");
-   getCurrentConfigJSON(preferences);
   if(actualsecs <  MINDSLEEPTIME || nodsleep){
     delay(actualsecs*1000+1);
     setup();

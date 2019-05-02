@@ -5,6 +5,9 @@
 #define BOOLS "booleans"
 #define SENSORNAME "sensors"
 
+#include "MQTTService.h"
+#include "Sensors.h"
+#include "WiFiStuff.h"
 #include "ArduinoJson.h"
 #include <Preferences.h>
 
