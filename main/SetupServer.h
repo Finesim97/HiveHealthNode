@@ -14,6 +14,7 @@
 #include <AsyncTCP.h>
 #include <pgmspace.h>
 
+extern Preferences preferences;
 
 class EndableAsyncWebServer: public AsyncWebServer{
   using AsyncWebServer::AsyncWebServer;
@@ -31,7 +32,9 @@ class SetupServer{
       AsyncWebSocket ws=AsyncWebSocket("/log");
       boolean ready=false;
 };
-void getCurrentConfigJSON(Preferences &p);
-boolean setConfigJSON(Preferences &p, char* jsonstr);
+      
+void printCurrentConfigJSON(Print &printer);
+boolean setConfigJSON(char* jsonstr);
+void getCurrentConfig(AsyncWebServerRequest *request);
 
 #endif

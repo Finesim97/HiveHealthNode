@@ -35,21 +35,6 @@ void scan(AsyncWebServerRequest *request) {
   json = String();
 }
 
-
-void SetupServer::begin(){
-     server.addHandler(&ws);
-      server.on("/hi", HTTP_GET, [](AsyncWebServerRequest *request){
-        request->send(200, "text/plain", "Hello, world");
-    });
-      server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-  request->send_P(200, "text/html", index_html);
-  });
-  server.on("/scan", HTTP_GET, scan);
-  server.onNotFound(notFound);
-  server.begin();
-  ready=true;
-}
-
 void SetupServer::log(const char* new_action){
   if(ready)
    ws.printfAll(new_action);
@@ -235,13 +220,14 @@ void constructCurrentConfigJSON(JsonDocument &d, Preferences &p){
  }
 }
 
-void getCurrentConfigJSON(Preferences &p){
+void printCurrentConfigJSON(Print &printer){
  StaticJsonDocument<capacity> d;
- constructCurrentConfigJSON(d,p);
- serializeJsonPretty(d, Serial);
+ constructCurrentConfigJSON(d,preferences);
+ serializeJson(d, printer);
 }
 
-bool setConfigJSON(Preferences &p, char* jsonstr){
+bool setConfigJSON(char* jsonstr){
+ Preferences &p=preferences;
  StaticJsonDocument<capacity> input;
  DeserializationError inputerr = deserializeJson(input, jsonstr);
  if (inputerr) {
@@ -273,4 +259,38 @@ bool setConfigJSON(Preferences &p, char* jsonstr){
       }
   }
   return true;
+}
+
+void getCurrentConfig(AsyncWebServerRequest *request) {
+  AsyncResponseStream *response = request->beginResponseStream("application/json");
+  printCurrentConfigJSON(*response);
+  request->send(response);
+}
+
+void setCurrentConfig(AsyncWebServerRequest *request) {
+      if (request->_tempObject != NULL) {
+        boolean worked=setConfigJSON((char*)(request->_tempObject));
+        if(worked){
+           request->send(204);
+          }else{
+           request->send(500);
+          }
+        }
+      request->send(400);
+}
+
+void SetupServer::begin(){
+     server.addHandler(&ws);
+      server.on("/hi", HTTP_GET, [](AsyncWebServerRequest *request){
+        request->send(200, "text/plain", "Hello, world");
+    });
+      server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+  request->send_P(200, "text/html", index_html);
+  });
+  server.on("/scan", HTTP_GET, scan);
+  server.on("/config", HTTP_GET, getCurrentConfig);
+  server.on("/config", HTTP_POST, getCurrentConfig);
+  server.onNotFound(notFound);
+  server.begin();
+  ready=true;
 }

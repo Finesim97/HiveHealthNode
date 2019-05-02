@@ -20,6 +20,7 @@
 #define NODSLEEP_PREF "nodsleep" //Preference to prevent deepsleep
 #define NODSLEEP_PREF_DEF true //Preference to prevent deepsleep default val
 #define LED_PIN 2 // Which pin controls the LED
+#define SETUPRUN "setuprun" //Preference to store, whether the user setup has been run before
 
 #define LOOPTIME 1 // How many seconds should be spent in the loop() method
 #define MINDSLEEPTIME 30 //At which sleep intervall (sec) should we go into deep sleep, gets overwritten by the NODSLEEP_PREF
@@ -27,7 +28,7 @@
 
 WiFiClient wifi; // Object to interact with the Wifi class
 Preferences preferences; // Helper to store the user settings in NVS
-SetupServer setupserver(80); //Status WS Server
+SetupServer setupserver(80); //Setup Server
 /*
  * Set the current action and writing it to the serial connection and the webserver
  */
@@ -52,6 +53,7 @@ RTC_DATA_ATTR uint32_t secsleeped = 0; // How many seconds has the node slept, g
 uint16_t secssetuplost = 0; // How many seconds did it take for wifi to come online, subtract that from the next sleep time
 unsigned long loopstarted = 0; // At which time (millis()) did we enter the loop method for the first time
 boolean setupneeded=true;
+boolean activatesetup=false;
 
 
 /*
@@ -60,25 +62,29 @@ boolean setupneeded=true;
 void setup() {
   long setupstart=millis();
   if(setupneeded){
-  Serial.begin(BAUDRATE);
-  setState("Setup");
-  WiFi.onEvent(WiFiEvent);
-  preferences.begin(PREFERENCE_NAMESPACE,false);
-  LEDbegin(LED_PIN);
-  setStatus(led_booting);
-  setupneeded=false;
+    activatesetup=goIntoSetupMode();
+    LEDbegin(LED_PIN);
+    setStatus(led_booting);
+    Serial.begin(BAUDRATE);
+    setState("Setup");
+    WiFi.onEvent(WiFiEvent);
+    preferences.begin(PREFERENCE_NAMESPACE,false);
   }
   setState("WiFi Start");
-  boolean connected=wificon.connect(true);
-  setupserver.begin();
+  boolean connected=wificon.connect(activatesetup);
   setState(connected?"WiFi connected°!":"WiFi not connected!?");
-    boolean mdnsstart=MDNS.begin(devname);
+  boolean mdnsstart=MDNS.begin(devname);
   if(mdnsstart){
       MDNS.addService("http", "tcp", 80);
     }else{
-        setState("Error starting mDNS!");
-   }
- // WiFi.printDiag(Serial);
+      setState("Error starting mDNS!");
+  }
+  if(setupneeded){
+    if(activatesetup)
+      setupserver.begin();
+    setupneeded=false;
+  }
+  // WiFi.printDiag(Serial);
   setState("Starting MQTT connection and sensor reading");
   mqtt.deepSleepLoop(secsleeped);
   setState("Going into loop() calls");
@@ -99,7 +105,7 @@ void dsleep(uint32_t secs) {
   uint32_t actualsecs = secstosleep>0?secstosleep:0;
   secsleeped += secs;
    setState("ZZZ... ZZZ...");
-  if(actualsecs <  MINDSLEEPTIME || nodsleep){
+  if(actualsecs <  MINDSLEEPTIME || nodsleep || activatesetup){
     delay(actualsecs*1000+1);
     setup();
     }else{
@@ -108,6 +114,11 @@ void dsleep(uint32_t secs) {
     }
 }
 
+boolean goIntoSetupMode(){
+  bool gogogo=!preferences.getBool(SETUPRUN,false);
+  gogogo=true; //TODO Replace with button read for example
+  return gogogo;
+}
 
 /*
  * Some libraries may need time in the main loop to finish their operations
