@@ -271,12 +271,26 @@ void setCurrentConfig(AsyncWebServerRequest *request) {
       if (request->_tempObject != NULL) {
         boolean worked=setConfigJSON((char*)(request->_tempObject));
         if(worked){
-           request->send(204);
+           request->send(204,"text/plain", "Wrote updated entries!\n");
           }else{
-           request->send(500);
+           request->send(500,"text/plain", "Error while updating entries!\n");
           }
         }
-      request->send(400);
+      request->send(400,"text/plain","Missing data!\n");
+}
+
+void handleJSONBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+      if (total > 0 && request->_tempObject == NULL && total < capacity) {
+        request->_tempObject = malloc(total+1);
+        char* objptr=(char*)(request->_tempObject);
+        objptr[total]='\0';
+      }
+      if (request->_tempObject != NULL) {
+        memcpy((uint8_t*)(request->_tempObject) + index, data, len);
+      }
+}
+void handleJSONUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
+  //TODO
 }
 
 void SetupServer::begin(){
@@ -289,7 +303,7 @@ void SetupServer::begin(){
   });
   server.on("/scan", HTTP_GET, scan);
   server.on("/config", HTTP_GET, getCurrentConfig);
-  server.on("/config", HTTP_POST, getCurrentConfig);
+  server.on("/config", HTTP_POST, setCurrentConfig,handleJSONUpload,handleJSONBody);
   server.onNotFound(notFound);
   server.begin();
   ready=true;

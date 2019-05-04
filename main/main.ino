@@ -25,6 +25,7 @@
 #define LOOPTIME 1 // How many seconds should be spent in the loop() method
 #define MINDSLEEPTIME 30 //At which sleep intervall (sec) should we go into deep sleep, gets overwritten by the NODSLEEP_PREF
 #define BAUDRATE 115200 // Serial Baudrate
+#define WIFITESTINTERVAL 20 // How many seconds should be between a wifi setup try (secs)
 
 WiFiClient wifi; // Object to interact with the Wifi class
 Preferences preferences; // Helper to store the user settings in NVS
@@ -52,8 +53,9 @@ RTC_DATA_ATTR boolean firstboot = true; // Is this the first time booting after 
 RTC_DATA_ATTR uint32_t secsleeped = 0; // How many seconds has the node slept, gets reset when the max wait time for a sensor has been reached
 uint16_t secssetuplost = 0; // How many seconds did it take for wifi to come online, subtract that from the next sleep time
 unsigned long loopstarted = 0; // At which time (millis()) did we enter the loop method for the first time
-boolean setupneeded=true;
-boolean activatesetup=false;
+unsigned long lastwificheck = 0; // At which time (millis()) did we check the wifi connection?
+boolean setupneeded=true; // After only a "delay" sleep, we don't need to reinit some objects and APIs
+boolean activatesetup=false; // To we need to start the setup server, also disables deep sleep 
 
 
 /*
@@ -69,10 +71,15 @@ void setup() {
     setState("Setup");
     WiFi.onEvent(WiFiEvent);
     preferences.begin(PREFERENCE_NAMESPACE,false);
+
   }
-  setState("WiFi Start");
-  boolean connected=wificon.connect(activatesetup);
-  setState(connected?"WiFi connected°!":"WiFi not connected!?");
+  boolean connected=WiFi.status() == WL_CONNECTED;
+  if(!connected&&lastwificheck==0||(millis()-lastwificheck)>WIFITESTINTERVAL*1000){
+      lastwificheck = millis();
+      setState("Trying WiFi Connection...");
+      boolean connected=wificon.connect(activatesetup);
+      setState(connected?"WiFi connected°!":"WiFi not connected!?");
+  }
   boolean mdnsstart=MDNS.begin(devname);
   if(mdnsstart){
       MDNS.addService("http", "tcp", 80);
