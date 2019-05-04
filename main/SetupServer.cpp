@@ -304,6 +304,11 @@ void SetupServer::begin(){
   server.on("/scan", HTTP_GET, scan);
   server.on("/config", HTTP_GET, getCurrentConfig);
   server.on("/config", HTTP_POST, setCurrentConfig,handleJSONUpload,handleJSONBody);
+  server.on("/restart", HTTP_POST, [](AsyncWebServerRequest *request){
+  request->send(200, "text/html", "Restarting...");
+    delay(500);
+    ESP.restart();
+  });
   server.onNotFound(notFound);
   server.begin();
   ready=true;
