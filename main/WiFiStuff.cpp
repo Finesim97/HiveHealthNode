@@ -22,12 +22,15 @@ void WifiCon::startWPS(){
     esp_wifi_wps_start(0);
 }
 
+
+IPAddress apIP(192, 168, 1, 1);
 boolean WifiCon::connect(boolean ap_enabled){
   const char *ssid=ssidbuffer, *id=identitybuffer, *wifipass=wifipassbuffer, *appass=appassbuffer, *upass=userpassbuffer;
   if(ap_enabled&&WiFi.getMode()!=WIFI_AP_STA){
     strcpy(appassbuffer,WIFI_APPASS_DEF);
     pref.getString(WIFI_APPASS,appassbuffer, WIFI_APPASS_MAXLENGTH+1);
     WiFi.mode(WIFI_AP_STA);
+    WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
     if(strlen(appassbuffer)>0){
        WiFi.softAP(apname,appass);
     }else{

@@ -38,6 +38,7 @@
 #define WIFI_USERPASS_DEF "" 
 
 
+
 class WifiCon{
     public:
       WifiCon(Preferences &_pref, char* _apname); // Constructor that sets the variable

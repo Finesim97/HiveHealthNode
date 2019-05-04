@@ -21,6 +21,7 @@
 #define NODSLEEP_PREF_DEF true //Preference to prevent deepsleep default val
 #define LED_PIN 2 // Which pin controls the LED
 #define SETUPRUN "setuprun" //Preference to store, whether the user setup has been run before
+#define MDNSNAME "hivehealthnode" //Name.local for the mDNS system
 
 #define LOOPTIME 1 // How many seconds should be spent in the loop() method
 #define MINDSLEEPTIME 30 //At which sleep intervall (sec) should we go into deep sleep, gets overwritten by the NODSLEEP_PREF
@@ -37,16 +38,14 @@ void setState(const char* new_action){
   Serial.println(new_action);
   setupserver.log(new_action);
 }
-MQTTService mqtt (preferences, wifi, sensors, SENSORS, setState); // Connects to the mqtt service and reads the sensors
-char* constructName(){
+char devname[14] = MQTT_CLIENTNAME_DEF;
+void constructName(){
  uint8_t mac[6]; //3 4 5 device
  esp_read_mac(mac, ESP_MAC_WIFI_STA);
- char str[14] = {0};
- sprintf(str,"hhnode-%02X%02X%02X", mac[3], mac[4], mac[5]);
- return str;
+ sprintf(devname,"hhnode-%02X%02X%02X", mac[3], mac[4], mac[5]);
 }
-char* devname = constructName();
 WifiCon wificon (preferences,devname);
+MQTTService mqtt (preferences, wifi, sensors, SENSORS, setState,devname); // Connects to the mqtt service and reads the sensors
 void (*wifiEventLogger) (const char*) = setState;
 
 RTC_DATA_ATTR boolean firstboot = true; // Is this the first time booting after a reset or just after a deep sleep
@@ -64,14 +63,16 @@ boolean activatesetup=false; // To we need to start the setup server, also disab
 void setup() {
   long setupstart=millis();
   if(setupneeded){
+    Serial.begin(BAUDRATE);
+    setState("Setup");
+    constructName();
     activatesetup=goIntoSetupMode();
     LEDbegin(LED_PIN);
     setStatus(led_booting);
-    Serial.begin(BAUDRATE);
-    setState("Setup");
     WiFi.onEvent(WiFiEvent);
     preferences.begin(PREFERENCE_NAMESPACE,false);
-
+    Serial.print("I am ");
+    Serial.println(devname);
   }
   boolean connected=WiFi.status() == WL_CONNECTED;
   if(!connected&&lastwificheck==0||(millis()-lastwificheck)>WIFITESTINTERVAL*1000){
@@ -80,7 +81,8 @@ void setup() {
       boolean connected=wificon.connect(activatesetup);
       setState(connected?"WiFi connected°!":"WiFi not connected!?");
   }
-  boolean mdnsstart=MDNS.begin(devname);
+  WiFi.setHostname(MDNSNAME);
+  boolean mdnsstart=MDNS.begin(MDNSNAME);
   if(mdnsstart){
       MDNS.addService("http", "tcp", 80);
     }else{
@@ -91,7 +93,6 @@ void setup() {
       setupserver.begin();
     setupneeded=false;
   }
-  // WiFi.printDiag(Serial);
   setState("Starting MQTT connection and sensor reading");
   mqtt.deepSleepLoop(secsleeped);
   setState("Going into loop() calls");
@@ -105,7 +106,7 @@ void setup() {
  * wifi connect time and the time spent in the loop() method calls.
  */
 void dsleep(uint32_t secs) {
-    setState("Preparing for sleep.");
+  setState("Preparing for sleep.");
   boolean nodsleep=preferences.getBool(NODSLEEP_PREF,NODSLEEP_PREF_DEF);
   setStatus(led_off);
   int32_t secstosleep = secs - LOOPTIME - secssetuplost;

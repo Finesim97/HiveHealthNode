@@ -20,7 +20,7 @@
 // MQTT client name
 #define MQTT_CLIENTNAME "cname"
 #define MQTT_CLIENTNAME_MAXLENGTH 127
-#define MQTT_CLIENTNAME_DEF "hivehealthnode"
+#define MQTT_CLIENTNAME_DEF "hhnode-XXXXXX"
 // MQTT username
 #define MQTT_USERNAME "mqttuser"
 #define MQTT_USERNAME_MAXLENGTH 127
@@ -74,10 +74,11 @@ class MQTTService{
       uint32_t manageWaitTimeInterval(uint32_t &sleeped); // How long can we sleep, without missing a measurement, resets the sleeped when needed
       bool deepSleepLoop(uint32_t &sleeped); // Measure the sensors, that need to be measured now and publish the results
       void disconnect(); // Disconnect the sensors
-      MQTTService(Preferences &_pref, Client &_wifi, SensorReading *_sensors, int _noofsensors, void (*logfunction) (const char*)); // Constructor that sets the variable
+      MQTTService(Preferences &_pref, Client &_wifi, SensorReading *_sensors, int _noofsensors, void (*logfunction) (const char*),char* devname); // Constructor that sets the variables
       char* getClientName();
     private:
       void (*logfunction) (const char*); // Action logger
+      char* devname;
       int noofsensors; // How long is the sensors array
       SensorReading *sensors; // The sensor array
       Preferences &pref; // The started connection to NVS

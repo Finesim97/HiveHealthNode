@@ -3,7 +3,7 @@
 
 // See the header for documentation
 
-MQTTService::MQTTService(Preferences &_pref, Client &_wifi, SensorReading* _sensors, int _noofsensors, void (*_logfunction) (const char*)):pref(_pref){
+MQTTService::MQTTService(Preferences &_pref, Client &_wifi, SensorReading* _sensors, int _noofsensors, void (*_logfunction) (const char*), char* _devname):pref(_pref),devname(_devname){
   sensors=_sensors;
   noofsensors=_noofsensors;
   logfunction=_logfunction;
@@ -16,7 +16,7 @@ boolean MQTTService::loop(){
 }
 
 char* MQTTService::getClientName(){
-            strcpy(clientnamebuffer,MQTT_CLIENTNAME_DEF);
+            strcpy(clientnamebuffer,devname);
             pref.getString(MQTT_CLIENTNAME,clientnamebuffer, MQTT_CLIENTNAME_MAXLENGTH+1);
             return clientnamebuffer;
        };
