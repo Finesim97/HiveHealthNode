@@ -290,9 +290,37 @@ void handleJSONBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, s
       }
 }
 void handleJSONUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final){
-  //TODO
+  
 }
 
+void getWIFIStatus(AsyncWebServerRequest *request){
+  switch(WiFi.status()){
+    case WL_NO_SHIELD: 
+       request->send(200, "text/html", "No WiFi shield available");
+      break;
+    case WL_IDLE_STATUS: 
+       request->send(200, "text/html", "WiFi idle");
+      break;
+    case WL_NO_SSID_AVAIL: 
+       request->send(200, "text/html", "No SSID set");
+      break;
+    case WL_SCAN_COMPLETED: 
+       request->send(200, "text/html", "Just finished a WiFi Scan");
+      break;
+    case WL_CONNECTED: 
+       request->send(200, "text/html", "Connected");
+      break;
+    case WL_CONNECT_FAILED: 
+       request->send(200, "text/html", "Unable to connect");
+      break;
+    case WL_CONNECTION_LOST: 
+       request->send(200, "text/html", "Lost Connection");
+      break;
+    case WL_DISCONNECTED: 
+       request->send(200, "text/html", "Disconnected");
+      break;
+  }
+}
 void SetupServer::begin(){
      server.addHandler(&ws);
       server.on("/hi", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -305,10 +333,10 @@ void SetupServer::begin(){
   server.on("/config", HTTP_GET, getCurrentConfig);
   server.on("/config", HTTP_POST, setCurrentConfig,handleJSONUpload,handleJSONBody);
   server.on("/restart", HTTP_POST, [](AsyncWebServerRequest *request){
-  request->send(200, "text/html", "Restarting...");
-    delay(500);
+    request->send(200, "text/html", "Restarting...");
     ESP.restart();
   });
+  server.on("/wifistatus",HTTP_GET,getWIFIStatus);
   server.onNotFound(notFound);
   server.begin();
   ready=true;
